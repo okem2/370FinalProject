@@ -62,16 +62,15 @@ class Game {
                     this.character.translate(vec3.fromValues(0.5, 0, 0));
                     vec3.add(state.camera.position, state.camera.position, vec3.fromValues(0.5, 0.0,0.0));
                     break;
-
                 case "d":
                     this.character.translate(vec3.fromValues(-0.5, 0, 0));
                     vec3.add(state.camera.position, state.camera.position, vec3.fromValues(-0.5, 0.0, 0.0));
                     break;
                 case "w":
-                    this.character.translate(vec3.fromValues(0,0,0.5));
+                    this.character.translate(vec3.fromValues(0, 0, 0.5));
                     break;
                 case "s":
-                    this.character.translate(vec3.fromValues(0,0,-0.5));
+                    this.character.translate(vec3.fromValues(0, 0, -0.5));
                     break;
                 default:
                     break;

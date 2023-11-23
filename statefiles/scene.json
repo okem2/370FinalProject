@@ -31,7 +31,26 @@
           "alpha": 1
         },
         "type": "cube",
-        "position": [ 0, 0, 5 ],
+        "position": [ 0, 0, 7.5 ],
+        "scale": [ 100, 5, 1 ],
+        "diffuseTexture": "default.jpg",
+        "normalTexture": "defaultNorm.jpg",
+        "rotation": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ],
+        "parent": null,
+        "model": null
+      },
+      {
+        "name": "backWall",
+        "material": {
+          "diffuse": [ 0.2, 0.2, 0.2 ],
+          "ambient": [ 0.3, 0.3, 0.3 ],
+          "specular": [ 0.5, 0.5, 0.5 ],
+          "n": 10.000002,
+          "shaderType": 1,
+          "alpha": 1
+        },
+        "type": "cube",
+        "position": [ 0, 0, -7.5 ],
         "scale": [ 100, 5, 1 ],
         "diffuseTexture": "default.jpg",
         "normalTexture": "defaultNorm.jpg",
@@ -51,7 +70,7 @@
         },
         "type": "plane",
         "position": [ 0, -0.5, 0 ],
-        "scale": [ 100, 1, 20 ],
+        "scale": [ 100, 1, 30 ],
         "diffuseTexture": "default.jpg",
         "normalTexture": "defaultNorm.jpg",
         "rotation": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ],
@@ -78,7 +97,7 @@
       "backgroundColor": [ 0, 0, 0 ],
       "camera": {
         "name": "mainCamera",
-        "position": [ 0.0, 5.0, -5.0 ],
+        "position": [ 0.0, 7.0, -6.0 ],
         "front": [ 0.0, -2.0, 1.0 ],
         "up": [ 0, 1, 0 ],
         "pitch": -4.799999999999998,
