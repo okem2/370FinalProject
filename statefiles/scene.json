@@ -1,0 +1,122 @@
+[
+  {
+    "objects": [
+      {
+        "name": "playerModel",
+        "material": {
+          "diffuse": [ 0.25, 0.5, 0.75 ],
+          "ambient": [ 0.429, 0.898, 0.111 ],
+          "specular": [ 0.5, 0.5, 0.5 ],
+          "n": 10.000002,
+          "shaderType": 1,
+          "alpha": 1
+        },
+        "type": "mesh",
+        "position": [ -1, 1, 0 ],
+        "scale": [ 0.5, 0.5, 0.5 ],
+        "diffuseTexture": "default.jpg",
+        "normalTexture": "defaultNorm.jpg",
+        "rotation": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ],
+        "parent": null,
+        "model": "sphere.obj"
+      },
+      {
+        "name": "frontWall",
+        "material": {
+          "diffuse": [ 0.2, 0.2, 0.2 ],
+          "ambient": [ 0.3, 0.3, 0.3 ],
+          "specular": [ 0.5, 0.5, 0.5 ],
+          "n": 10.000002,
+          "shaderType": 1,
+          "alpha": 1
+        },
+        "type": "cube",
+        "position": [ 0, 0, 5 ],
+        "scale": [ 100, 5, 1 ],
+        "diffuseTexture": "default.jpg",
+        "normalTexture": "defaultNorm.jpg",
+        "rotation": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ],
+        "parent": null,
+        "model": null
+      },
+      {
+        "name": "surfacePlane",
+        "material": {
+          "diffuse": [ 0.5882, 0.5882, 0.5882 ],
+          "ambient": [ 0.3, 0.3, 0.3 ],
+          "specular": [ 0.5, 0.5, 0.5 ],
+          "n": 10.000002,
+          "shaderType": 1,
+          "alpha": "1.0"
+        },
+        "type": "plane",
+        "position": [ 0, -0.5, 0 ],
+        "scale": [ 100, 1, 20 ],
+        "diffuseTexture": "default.jpg",
+        "normalTexture": "defaultNorm.jpg",
+        "rotation": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ],
+        "parent": null,
+        "model": null
+      }
+
+    ],
+    "pointLights": [
+      {
+        "name": "pointLight1",
+        "colour": [ 1, 1, 1 ],
+        "position": [ 0, 5, 0 ],
+        "strength": 2,
+        "quadratic": 0.035,
+        "linear": 0.09,
+        "constant": 1,
+        "nearPlane": 0.5,
+        "farPlane": 100,
+        "shadow": 0
+      }
+    ],
+    "settings": {
+      "backgroundColor": [ 0, 0, 0 ],
+      "camera": {
+        "name": "mainCamera",
+        "position": [ 0.0, 5.0, -5.0 ],
+        "front": [ 0.0, -2.0, 1.0 ],
+        "up": [ 0, 1, 0 ],
+        "pitch": -4.799999999999998,
+        "yaw": 12.399999999999919,
+        "roll": 0,
+        "moveSpeed": 10,
+        "move": false,
+        "canvasFocused": false,
+        "rateX": 0,
+        "rateY": 0,
+        "keyboard": {
+          "d": false,
+          "a": false,
+          "s": false,
+          "w": false,
+          "A": false,
+          "D": false
+        },
+        "viewMatrix": {
+          "0": -0.21473532915115356,
+          "1": 0.0817258432507515,
+          "2": -0.9732469320297241,
+          "3": 0,
+          "4": 0,
+          "5": 0.996492862701416,
+          "6": 0.08367785811424255,
+          "7": 0,
+          "8": 0.9766722917556763,
+          "9": 0.017968593165278435,
+          "10": -0.2139822244644165,
+          "11": 0,
+          "12": -0.07489088922739029,
+          "13": -0.33006909489631653,
+          "14": -2.0448954105377197,
+          "15": 1
+        },
+        "sensitivity": 0.4
+      }
+    }
+  }
+]
