@@ -27,3 +27,5 @@ in /src/objects
 This is just a template to get you started in making a game using Refinery. Feel free to edit all of this code and change whatever you'd like. And as always have fun. 
 
 Contact me at zachthm@gmail.com if you have any questions
+
+commit test
