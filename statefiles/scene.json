@@ -78,7 +78,7 @@
         "model": null
       },
       {
-        "name": "leftWall",
+        "name": "rightWall",
         "material": {
           "diffuse": [ 0.2, 0.2, 0.2 ],
           "ambient": [ 0.3, 0.3, 0.3 ],

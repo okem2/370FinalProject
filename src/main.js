@@ -213,10 +213,11 @@ function drawScene(gl, deltaTime, state) {
     // sort objects by nearness to camera
     let sorted = state.objects.sort((a, b) => {
         let aCentroidFour = vec4.fromValues(a.centroid[0], a.centroid[1], a.centroid[2], 1.0);
-        vec4.transformMat4(aCentroidFour, aCentroidFour, a.modelMatrix);
+        // fixed a bug
+        vec4.transformMat4(aCentroidFour, aCentroidFour, a.model.modelMatrix);
 
         let bCentroidFour = vec4.fromValues(b.centroid[0], b.centroid[1], b.centroid[2], 1.0);
-        vec4.transformMat4(bCentroidFour, bCentroidFour, b.modelMatrix);
+        vec4.transformMat4(bCentroidFour, bCentroidFour, a.model.modelMatrix);
 
         return vec3.distance(state.camera.position, vec3.fromValues(aCentroidFour[0], aCentroidFour[1], aCentroidFour[2]))
             >= vec3.distance(state.camera.position, vec3.fromValues(bCentroidFour[0], bCentroidFour[1], bCentroidFour[2])) ? -1 : 1;
