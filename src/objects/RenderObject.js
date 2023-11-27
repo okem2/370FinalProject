@@ -30,7 +30,8 @@ class RenderObject {
       textureNorm: object.normalTexture ? getTextures(glContext, object.normalTexture) : null,
     };
 
-    this.modelMatrix = mat4.create();
+    // fixed a bug
+    this.model.modelMatrix = mat4.create();
     this.lightingShader = this.lightingShader.bind(this);
   }
 
