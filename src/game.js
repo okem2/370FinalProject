@@ -10,6 +10,10 @@ class Game {
         this.state = state;
         this.spawnedObjects = [];
         this.collidableObjects = [];
+        this.enemyList = [];
+        this.elapsedTime = 0.0;
+        this.totalTime = 0.0;
+        
 
 
         // keystates is for all keyboard input
@@ -248,6 +252,11 @@ class Game {
         this.rightWall = getObject(this.state, "rightWall");
         this.createOBBCollider(this.rightWall, this.getOBBsMinMax(this.rightWall));
 
+        this.enemyObject = getObject(this.state, "enemyModel");
+        this.createSphereCollider(this.enemyObject, this.getSphereRadiusFromAABB(this.getOBBsMinMax(this.character)));
+
+
+        console.log(state.objects);
         // LEAVE THIS COMMENT IN, WE'RE GOING TO NEED THIS LATER.
         // example - create sphere colliders on our two objects as an example, we give 2 objects colliders otherwise
         // no collision can happen
@@ -446,7 +455,44 @@ class Game {
     // Runs once every frame non stop after the scene loads
     onUpdate(deltaTime) {
         // TODO - Here we can add game logic, like moving game objects, detecting collisions, you name it. Examples of functions can be found in sceneFunctions
+        //Update the total time in the game and the elapsed time between spawns
+        this.elapsedTime = this.elapsedTime + deltaTime;
+        this.totalTime = this.totalTime + deltaTime;
+
+
         
+
+        //If it's been two seconds since anything was spawned, run the loop to spawn enemies
+        if (this.elapsedTime >= 2.0) {
+            //The amount of enemies spawned every second increases every 20 seconds 
+            let spawnRate = Math.floor(this.totalTime / 20) + 1;
+            this.elapsedTime = 0.0;
+            for (let i = 0; i < spawnRate; i++) {
+                //the spawnObject function creates an object and automatically puts it into the state.objects list. This is helpful, but it also makes it
+                //difficult to get it directly since it then sorts the list by depth, so we can't just grab the last object in the list.
+                this.newEnemy = spawnObject(state.loadObjects[1], state);
+                for (let j = 0; j < state.objects.length; j++) {
+                    if ((this.state.objects[j].name === "enemyModel") && (this.state.objects[j].collider === undefined)) {
+                        //If we find an enemy within the list that doesn't have a collider, it needs to be given a collider and then spawned a random direction from the player.
+                        this.createSphereCollider(state.objects[j], this.getSphereRadiusFromAABB(this.getOBBsMinMax(state.objects[j])));
+                        let randomOffset = randomVec3(0, 1);
+                        //Convert the vec3 to a vec2 because we only need 2 dimensions in this case. Math.random doesn't give negative numbers, so I had to
+                        // use 1 + Math.round(Math.random()) * 2 on each coordinate in order to multiply it by 1 or -1, so it spawns enemies randomly in all
+                        //four quadrants.
+                        randomOffset = vec2.fromValues(randomOffset[0] * (-1 + Math.round(Math.random()) * 2), randomOffset[2] * (-1 + Math.round(Math.random()) * 2));
+                        vec2.normalize(randomOffset, randomOffset);
+                        vec2.scale(randomOffset, randomOffset, 5);
+                        vec3.add(state.objects[j].model.position, this.character.model.position, vec3.fromValues(randomOffset[0], 0, randomOffset[1]));
+
+                    }
+                }
+                //Create an enemy sphere and give it a collision box
+            }
+        }
+        
+
+        
+
         // process our input. We'll have to keep in mind that we won't process input if the character is dead.
         this.processInput()
 

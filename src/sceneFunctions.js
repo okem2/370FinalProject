@@ -13,12 +13,13 @@ function getObject(state, name) {
 
 async function spawnObject(object, state) {
     if (object.type === "mesh") {
+        console.log("Spawning new mesh");
         return await addMesh(object);
     } else if (object.type === "cube") {
         return await addCube(object, state);
     } else if (object.type === "plane") {
         return await addPlane(object, state);
-    } else if (object.type.includes("Custom")) {
+    } else if (object.type === "Custom") {
         return await addCustom(object, state);
     }
 }
