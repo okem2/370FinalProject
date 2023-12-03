@@ -21,6 +21,25 @@
         "model": "sphere.obj"
       },
       {
+        "name": "enemyModel",
+        "material": {
+          "diffuse": [ 0.75, 0.5, 0.25 ],
+          "ambient": [ 0.429, 0.898, 0.111 ],
+          "specular": [ 0.5, 0.5, 0.5 ],
+          "n": 10.000002,
+          "shaderType": 1,
+          "alpha": 1
+        },
+        "type": "mesh",
+        "position": [ 2, 1, 2 ],
+        "scale": [ 0.5, 0.5, 0.5 ],
+        "diffuseTexture": "default.jpg",
+        "normalTexture": "defaultNorm.jpg",
+        "rotation": [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ],
+        "parent": null,
+        "model": "sphere.obj"
+      },
+      {
         "name": "frontWall",
         "material": {
           "diffuse": [ 0.2, 0.2, 0.2 ],
