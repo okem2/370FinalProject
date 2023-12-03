@@ -60,6 +60,11 @@ class Game {
             radius: radius,
             onCollide: onCollide ? onCollide : (otherObject) => {
                 console.log(`Collided with ${otherObject.name}`);
+                if ((object.name === "playerModel") && (otherObject.name === "enemyModel")) {
+                    //Impossible to figure out which enemy of the objects array is being collided with here, so we
+                    //change the name and then address it later.
+                    otherObject.name = "dead";
+                }
             }
         };
         this.collidableObjects.push(object);
@@ -237,6 +242,7 @@ class Game {
         // of collisions between the player and all 4 walls.
         this.character = getObject(this.state, "playerModel");
         this.createSphereCollider(this.character, this.getSphereRadiusFromAABB(this.getOBBsMinMax(this.character)));
+        this.character.collider.radius = 0.5 * this.character.collider.radius;
 
         this.surface = getObject(this.state, "surfacePlane");
 
@@ -452,6 +458,32 @@ class Game {
         }
     }
 
+    //Move all enemies towards the player
+    moveEnemies() {
+        
+        for (let i = 0; i < state.objects.length; i++) {
+            if (state.objects[i].name === "enemyModel") {
+                let dirVector = vec3.create();
+                vec3.subtract(dirVector, this.character.model.position, state.objects[i].model.position);
+                vec3.normalize(dirVector, dirVector);
+                vec3.scale(dirVector, dirVector, 0.05);
+                vec3.add(state.objects[i].model.position, state.objects[i].model.position, dirVector);
+            }
+        }
+    }
+
+    removeDeadEnemies() {
+        let arrayLength = state.objects.length;
+        for (let i = 0; i < arrayLength; i++) {
+            if (state.objects[i].name === "dead") {
+                //Remove the dead enemy from the objects list and reset i
+                state.objects.splice(i, 1);
+                i = 0;
+                arrayLength -= 1;
+            }
+        }
+    }
+
     // Runs once every frame non stop after the scene loads
     onUpdate(deltaTime) {
         // TODO - Here we can add game logic, like moving game objects, detecting collisions, you name it. Examples of functions can be found in sceneFunctions
@@ -483,7 +515,7 @@ class Game {
                         vec2.normalize(randomOffset, randomOffset);
                         vec2.scale(randomOffset, randomOffset, 5);
                         vec3.add(state.objects[j].model.position, this.character.model.position, vec3.fromValues(randomOffset[0], 0, randomOffset[1]));
-
+                        
                     }
                 }
                 //Create an enemy sphere and give it a collision box
@@ -497,12 +529,13 @@ class Game {
         this.processInput()
 
         // example: Rotate a single object we defined in our start method
-        this.character.rotate('x', deltaTime * 0.5);
+
+        this.moveEnemies();
         
         // check collisions.
         this.checkCollision(this.character);
 
-
+        this.removeDeadEnemies();
 
         // example: Rotate all objects in the scene marked with a flag
         // this.state.objects.forEach((object) => {
