@@ -62,9 +62,13 @@ async function main() {
         uniform mat4 uViewMatrix;
         uniform mat4 uModelMatrix;
 
+        uniform mat4 normalMatrix;
+	    uniform vec3 uCameraPosition;
+
         out vec3 oNormal;
         out vec2 oUV;
         out vec3 oFragPosition;
+        out vec3 oCameraPosition;
 
         void main() {
             
@@ -74,8 +78,24 @@ async function main() {
             oUV = aUV;
             oFragPosition = (uModelMatrix * vec4(aPosition, 1.0)).xyz;
             oNormal = normalize((uModelMatrix * vec4(aNormal, 1.0)).xyz);
+
+            oCameraPosition = uCameraPosition;
         }
         `;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     const fragShaderSample =
         `#version 300 es
@@ -86,26 +106,86 @@ async function main() {
             vec3 position;
             vec3 colour;
             float strength;
+            float linear;
+            float quadratic;
         };
+
+        
+        uniform int numLights; // The number of lights currently active
+        uniform PointLight pointLights[MAX_LIGHTS];
+
+        uniform PointLight mainLight;
+
+        // from fsShader
+        in vec3 oNormal;
+        in vec3 oFragPosition;
+        in vec3 oCameraPosition;
 
         in vec2 oUV;
 
-        uniform PointLight mainLight;
-        uniform vec3 diffuseVal;
         uniform int samplerExists;
         uniform sampler2D uTexture;
 
-        out vec4 fragColor;
-        void main() {
-            if (samplerExists == 1){
-                vec3 textureColour = texture(uTexture, oUV).rgb;
-                fragColor = vec4(diffuseVal * textureColour, 1.0);
+        uniform vec3 ambientVal;
+        uniform vec3 diffuseVal;
+        uniform vec3 specularVal;
+        uniform float nVal;
+        uniform float alphaValue;
 
+        
+
+        out vec4 fragColor;
+
+        vec3 calculateColour(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ambientVal, vec3 diffuseVal, vec3 specularVal, float nVal, float alphaValue, int samplerExists, vec3 textureColor) {
+		
+            // do all normal blinn phong calculations
+            
+            vec3 lightDir = normalize(light.position - fragPosition);
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+
+            vec3 ambient = ambientVal * light.colour;
+
+            float diff = max(dot(normal, lightDir), 0.0);
+            vec3 diffuse = diff * diffuseVal * light.colour;
+
+            float spec = pow(max(dot(halfwayDir, normal), 0.0), nVal);
+            vec3 specular = spec * specularVal * light.colour;
+
+            float dist = length(light.position - fragPosition);
+            float attenuation = light.strength / (1.0 + light.linear * dist + light.quadratic * (dist*dist));
+
+            diffuse *= attenuation;
+            specular *= attenuation;
+
+            
+            if (samplerExists == 1) {
+                return (mix(textureColor, ambient + diffuse, 0.6) + specular);
             }
-            else{
-                fragColor = vec4(diffuseVal, 1.0);
+
+            return (ambient + diffuse + specular);
+        }
+
+
+        void main() {
+
+            vec3 normal = normalize(oNormal);
+            vec3 viewDir = normalize(oCameraPosition - oFragPosition);
+            
+            vec3 textureColor = vec3(0.0);
+            if (samplerExists == 1) {
+                //ambientVal = mix(texture(uTexture, oUV).rgb, diffuseVal, 0.1);
+                textureColor = texture(uTexture, oUV).rgb;
+            }
+
+            // initialize to zero so we can add onto it later.
+            // loop for as many lights as we have and calculate their lighting.
+            vec3 totalLighting = vec3(0.0);
+            for (int i = 0; i < numLights; i++) {
+                totalLighting += calculateColour(pointLights[i], normal, oFragPosition, viewDir, ambientVal, diffuseVal, specularVal, nVal, alphaValue, samplerExists, textureColor);
             }
             
+            fragColor = vec4(totalLighting, 1.0);
+
         }
         `;
 
@@ -223,7 +303,7 @@ function drawScene(gl, deltaTime, state) {
             >= vec3.distance(state.camera.position, vec3.fromValues(bCentroidFour[0], bCentroidFour[1], bCentroidFour[2])) ? -1 : 1;
     });
 
-    console.log(sorted.length);
+    //console.log(sorted.length);
     // iterate over each object and render them
     sorted.map((object) => {
         gl.useProgram(object.programInfo.program);
@@ -264,8 +344,9 @@ function drawScene(gl, deltaTime, state) {
             mat4.translate(modelMatrix, modelMatrix, negCentroid);
 
             if (object.parent) {
-                let parent = getObject(state, object.parent);
-                if (parent.model && parent.model.modelMatrix) {
+                let parent = object.parent;
+                console.log("Parent: ", object.parent);
+                if (!(parent.model == null) && parent.model.modelMatrix) {
                     mat4.multiply(modelMatrix, parent.model.modelMatrix, modelMatrix);
                 }
             }
@@ -291,8 +372,13 @@ function drawScene(gl, deltaTime, state) {
             gl.uniform3fv(gl.getUniformLocation(object.programInfo.program, 'mainLight.colour'), mainLight.colour);
             gl.uniform1f(gl.getUniformLocation(object.programInfo.program, 'mainLight.strength'), mainLight.strength);
 
+            gl.uniform1i(gl.getUniformLocation(object.programInfo.program, 'numLights'), state.numLights);
+            
+            object.numLights = state.numLights;
+
             gl.uniform1i(object.programInfo.uniformLocations.numLights, state.numLights);
             if (state.pointLights.length > 0) {
+                object.programInfo.uniformLocations.pointLights = [];
                 for (let i = 0; i < state.pointLights.length; i++) {
                     gl.uniform3fv(gl.getUniformLocation(object.programInfo.program, 'pointLights[' + i + '].position'), state.pointLights[i].position);
                     gl.uniform3fv(gl.getUniformLocation(object.programInfo.program, 'pointLights[' + i + '].colour'), state.pointLights[i].colour);

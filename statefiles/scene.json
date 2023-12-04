@@ -5,7 +5,7 @@
         "name": "playerModel",
         "material": {
           "diffuse": [ 0.25, 0.5, 0.75 ],
-          "ambient": [ 0.429, 0.898, 0.111 ],
+          "ambient": [ 0.25, 0.5, 0.75],
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 1,
@@ -24,10 +24,10 @@
         "name": "enemyModel",
         "material": {
           "diffuse": [ 0.75, 0.5, 0.25 ],
-          "ambient": [ 0.429, 0.898, 0.111 ],
+          "ambient": [ 0.75, 0.5, 0.25],
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
-          "shaderType": 1,
+          "shaderType": 3,
           "alpha": 1
         },
         "type": "mesh",

@@ -9,6 +9,7 @@ class Game {
     constructor(state) {
         this.state = state;
         this.spawnedObjects = [];
+        this.projectiles = [];
         this.collidableObjects = [];
         this.enemyList = [];
         this.elapsedTime = 0.0;
@@ -51,6 +52,61 @@ class Game {
     // example - we can add our own custom method to our game and call it using 'this.customMethod()'
     customMethod() {
         console.log("Custom method!");
+    }
+
+    eyeTraceToShootPlane(desiredY, screenX, screenY) {
+        // not my work, forget where I found it from, gotta find that stack
+        // overflow thread to give credit because when I tried to inverse
+        // projectionmatrix I just kept getting NaN
+        let proj = this.state.projectionMatrix;
+        
+        let viewMatrix = this.state.viewMatrix;
+        let canvasX = this.state.canvas.width
+        let canvasY = this.state.canvas.height
+
+        const x = ((2.0 * screenX) / canvasX) - 1.0;
+        const y = 1.0 - ((2.0 * screenY) / canvasY);
+
+
+        let ray = vec4.fromValues(x, y, -1.0, 1.0);
+        let ray2 = vec4.fromValues(x, y, 1.0, 1.0);
+
+        let inverseViewProjectionMatrix = mat4.create();
+        mat4.multiply(inverseViewProjectionMatrix, proj, viewMatrix);
+        mat4.invert(inverseViewProjectionMatrix, inverseViewProjectionMatrix);
+
+        let nearPointWorld = vec4.create();
+        vec4.transformMat4(nearPointWorld, ray, inverseViewProjectionMatrix);
+
+        
+
+        let farPointWorld = vec4.create();
+        vec4.transformMat4(farPointWorld, ray2, inverseViewProjectionMatrix);
+
+        // Scale the points to homogenize (convert from vec4 to vec3)
+        let nearPointWorld3 = vec3.fromValues(nearPointWorld[0], nearPointWorld[1], nearPointWorld[2]);
+        vec3.scale(nearPointWorld3, nearPointWorld3, 1 / nearPointWorld[3]);
+
+        let farPointWorld3 = vec3.fromValues(farPointWorld[0], farPointWorld[1], farPointWorld[2]);
+        vec3.scale(farPointWorld3, farPointWorld3, 1 / farPointWorld[3]);
+
+        // Calculate the ray direction
+        let rayDirection = vec3.create();
+        vec3.subtract(rayDirection, farPointWorld3, nearPointWorld3);
+        vec3.normalize(rayDirection, rayDirection);
+
+        //console.log(rayDirection[2], this.state.camera.position[2], desiredY);
+        let t = (desiredY - this.state.camera.position[1]) / rayDirection[1];
+        //console.log(t);
+
+        let intersectionPoint = vec3.create();
+        vec3.scaleAndAdd(intersectionPoint, this.state.camera.position, rayDirection, t);
+        //console.log(intersectionPoint);
+
+        return intersectionPoint;
+
+        // now that we have the ray direction, we need to take the camera position
+        // and add solve for the same Z from cameraPos*n*rayDirection.z = player.centroid.z
     }
 
     // example - create a collider on our object with various fields we might need (you will likely need to add/remove/edit how this works)
@@ -245,6 +301,12 @@ class Game {
         this.character.collider.radius = 0.5 * this.character.collider.radius;
 
         this.surface = getObject(this.state, "surfacePlane");
+        // make the plane follow the character then adjust its texture coordinates (this doesn't change any texture
+        // coordinates yet it just parents the surface to the character)
+        //this.surface.parent = this.character;
+        //console.log("Parent: ", this.surface.parent);
+        //vec3.subtract(this.surface.position, this.surface.position, vec3.fromValues(0.0,-10.0,0.0));
+        //this.surface.translate(vec3.fromValues(0.0, -1.0, 0));
 
         this.frontWall = getObject(this.state, "frontWall");
         this.createOBBCollider(this.frontWall, this.getOBBsMinMax(this.frontWall));
@@ -331,8 +393,8 @@ class Game {
             // For example, updating something on the screen in real-time
         });
 
-
-        this.customMethod(); // calling our custom method! (we could put spawning logic, collision logic etc in there ;) )
+        
+        this.customMethod(); // calling our custom method! (we could put spawning logic, collision logic etc in there ;) ) 
 
         // example: spawn some stuff before the scene starts
         // for (let i = 0; i < 10; i++) {
@@ -351,26 +413,7 @@ class Game {
         //     }
         // }
 
-        // for (let i = 0; i < 10; i++) {
-        //     let tempObject = await spawnObject({
-        //         name: `new-Object${i}`,
-        //         type: "cube",
-        //         material: {
-        //             diffuse: randomVec3(0, 1)
-        //         },
-        //         position: vec3.fromValues(4 - i, 0, 0),
-        //         scale: vec3.fromValues(0.5, 0.5, 0.5)
-        //     }, this.state);
-
-
-        // tempObject.constantRotate = true; // lets add a flag so we can access it later
-        // this.spawnedObjects.push(tempObject); // add these to a spawned objects list
-
-        // tempObject.collidable = true;
-        // tempObject.onCollide = (object) => { // we can also set a function on an object without defining the function before hand!
-        //     console.log(`I collided with ${object.name}!`);
-        // };
-        // }
+        
     }
 
     // this is where we process input. We keep track of keys, etc. I have added some skeletons for
@@ -418,15 +461,34 @@ class Game {
 
     // skeleton for attack. We will use mousePos later to detect the player eye angle.
     doAttack(mouseKey, mousePos) {
+        
+        let object = this.character;
+
+        let eyepos = vec3.create();
+        vec3.transformMat4(eyepos, object.centroid, object.model.modelMatrix);
+
+        //console.log("EYEPOS: ",eyepos);
+        let desiredY = eyepos[1]
+        let shootpos = this.eyeTraceToShootPlane(desiredY, mousePos.x, mousePos.y);
+
+        let direction = vec3.create();
+        vec3.subtract(direction, shootpos, eyepos);
+
+        vec3.normalize(direction, direction);
+        //console.log(direction);
+
         // Define character movement based on the key
         switch (mouseKey) {
             case 1:
-                // shoot a laser??
-
+                
+                
                 console.log("mouse1 down");
+                this.spawnProjectile(eyepos, direction, 0.07)
                 break;
             case 2:
                 console.log("mouse2 down");
+                // shoot a laser??
+                
                 break;
             
             case 3:
@@ -439,19 +501,24 @@ class Game {
     // move the character. No more jagged teleporting.
     moveCharacter(key) {
         // Define character movement based on the key
+        // fixed capslock issues, sorta.
         switch (key) {
             case "a":
+            case "A":
                 this.character.translate(vec3.fromValues(0.1, 0, 0));
                 vec3.add(state.camera.position, state.camera.position, vec3.fromValues(0.1, 0.0,0.0));
                 break;
             case "d":
+            case "D":
                 this.character.translate(vec3.fromValues(-0.1, 0, 0));
                  vec3.add(state.camera.position, state.camera.position, vec3.fromValues(-0.1, 0.0, 0.0));
                 break;
             case "w":
+            case "W":
                 this.character.translate(vec3.fromValues(0, 0, 0.05));
                 break;
             case "s":
+            case "S":
                 this.character.translate(vec3.fromValues(0, 0, -0.05));
                 break;
             // Add other cases as needed
@@ -484,6 +551,54 @@ class Game {
         }
     }
 
+    moveEnemies() {
+        
+        for (let i = 0; i < state.objects.length; i++) {
+            if (state.objects[i].name === "enemyModel") {
+                let dirVector = vec3.create();
+                vec3.subtract(dirVector, this.character.model.position, state.objects[i].model.position);
+                vec3.normalize(dirVector, dirVector);
+                vec3.scale(dirVector, dirVector, 0.05);
+                vec3.add(state.objects[i].model.position, state.objects[i].model.position, dirVector);
+            }
+        }
+    }
+
+    spawnProjectile(origin, direction, speed) {
+
+        let tempObject = spawnObject({
+            name: `Projectile${this.elapsedTime}`,
+            type: "cube",
+            material: {
+                diffuse: randomVec3(0, 1)
+            },
+            position: origin,
+            scale: vec3.fromValues(0.5, 0.5, 0.5),
+        }, this.state).then(tempObject => {
+            //console.log(tempObject);
+            let minmax = this.getOBBsMinMax(tempObject);
+
+            //tempObject.direction = direction;
+            //tempObject.speed = speed;
+
+            tempObject.velocity = direction.map(a => a * speed)
+            //direction: direction,
+            //speed: speed,
+            //let c = tempObject.centroid
+            // move to center
+            tempObject.translate(tempObject.centroid.map(element => element * -1));
+            
+            tempObject.collidable = true;
+            tempObject.onCollide = (object) => {
+                console.log(`I collided with ${object.name}!`);
+            };
+
+            this.createSphereCollider(tempObject, this.getSphereRadiusFromAABB(minmax),tempObject.onCollide);
+            this.projectiles.push(tempObject); // add to spawned objects list
+        });
+    }
+    
+    
     // Runs once every frame non stop after the scene loads
     onUpdate(deltaTime) {
         // TODO - Here we can add game logic, like moving game objects, detecting collisions, you name it. Examples of functions can be found in sceneFunctions
@@ -493,7 +608,7 @@ class Game {
 
 
         
-
+        /*
         //If it's been two seconds since anything was spawned, run the loop to spawn enemies
         if (this.elapsedTime >= 2.0) {
             //The amount of enemies spawned every second increases every 20 seconds 
@@ -521,7 +636,7 @@ class Game {
                 //Create an enemy sphere and give it a collision box
             }
         }
-        
+        */
 
         
 
@@ -537,23 +652,15 @@ class Game {
 
         this.removeDeadEnemies();
 
-        // example: Rotate all objects in the scene marked with a flag
-        // this.state.objects.forEach((object) => {
-        //     if (object.constantRotate) {
-        //         object.rotate('y', deltaTime * 0.5);
-        //     }
-        // });
+        //simulate a collision between the first spawned object and 'cube' 
+        // put this in a helper function, ugly block in main bad
+        this.projectiles.forEach((object) => {
+            this.checkCollision(object);
+            //console.log(object);
+            object.translate(object.velocity);
+        });
 
-        // simulate a collision between the first spawned object and 'cube' 
-        // if (this.spawnedObjects[0].collidable) {
-        //     this.spawnedObjects[0].onCollide(this.cube);
-        // }
-
-        // example: Rotate all the 'spawned' objects in the scene
-        // this.spawnedObjects.forEach((object) => {
-        //     object.rotate('y', deltaTime * 0.5);
-        // });
-
+        
 
         // example - call our collision check method on our cube
         // this.checkCollision(this.cube);
