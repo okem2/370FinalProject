@@ -69,31 +69,32 @@ class CustomObject {
             attribLocations: {
                 vertexPosition: this.gl.getAttribLocation(shaderProgram, 'aPosition'),
                 vertexNormal: this.gl.getAttribLocation(shaderProgram, 'aNormal'),
-                // vertexUV: this.gl.getAttribLocation(shaderProgram, 'aUV'),
-                // vertexBitangent: this.gl.getAttribLocation(shaderProgram, 'aVertBitang')
+                vertexUV: this.gl.getAttribLocation(shaderProgram, 'aUV'),
+                vertexBitangent: this.gl.getAttribLocation(shaderProgram, 'aVertBitang')
             },
             uniformLocations: {
                 projection: this.gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
                 view: this.gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
                 model: this.gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
-                // normalMatrix: this.gl.getUniformLocation(shaderProgram, 'normalMatrix'),
+                normalMatrix: this.gl.getUniformLocation(shaderProgram, 'normalMatrix'),
                 diffuseVal: this.gl.getUniformLocation(shaderProgram, 'diffuseVal'),
-                // ambientVal: this.gl.getUniformLocation(shaderProgram, 'ambientVal'),
-                // specularVal: this.gl.getUniformLocation(shaderProgram, 'specularVal'),
-                // nVal: this.gl.getUniformLocation(shaderProgram, 'nVal'),
-                // cameraPosition: this.gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
-                // numLights: this.gl.getUniformLocation(shaderProgram, 'numLights'),
+                ambientVal: this.gl.getUniformLocation(shaderProgram, 'ambientVal'),
+                specularVal: this.gl.getUniformLocation(shaderProgram, 'specularVal'),
+                nVal: this.gl.getUniformLocation(shaderProgram, 'nVal'),
+
+                cameraPosition: this.gl.getUniformLocation(shaderProgram, 'uCameraPosition'),
+                numLights: this.gl.getUniformLocation(shaderProgram, 'numLights'),
                 // lightPositions: this.gl.getUniformLocation(shaderProgram, 'uLightPositions'),
                 // lightColours: this.gl.getUniformLocation(shaderProgram, 'uLightColours'),
                 // lightStrengths: this.gl.getUniformLocation(shaderProgram, 'uLightStrengths'),
-                // samplerExists: this.gl.getUniformLocation(shaderProgram, "samplerExists"),
-                // sampler: this.gl.getUniformLocation(shaderProgram, 'uTexture'),
+                samplerExists: this.gl.getUniformLocation(shaderProgram, "samplerExists"),
+                sampler: this.gl.getUniformLocation(shaderProgram, 'uTexture'),
                 // normalSamplerExists: this.gl.getUniformLocation(shaderProgram, 'uTextureNormExists'),
                 // normalSampler: this.gl.getUniformLocation(shaderProgram, 'uTextureNorm')
             },
         };
 
-        shaderValuesErrorCheck(programInfo);
+                shaderValuesErrorCheck(programInfo);
         this.programInfo = programInfo;
     }
 
@@ -102,7 +103,7 @@ class CustomObject {
         const positions = new Float32Array(this.model.vertices.flat());
         const normals = new Float32Array(this.model.normals.flat());
         const indices = this.model.triangles ? new Uint16Array(this.model.triangles) : null;
-        // const textureCoords = new Float32Array(this.model.uvs);
+        const textureCoords = new Float32Array(this.model.uvs);
         // const bitangents = new Float32Array(this.model.bitangents);
 
         var vertexArrayObject = this.gl.createVertexArray();
@@ -114,7 +115,7 @@ class CustomObject {
             attributes: {
                 position: initPositionAttribute(this.gl, this.programInfo, positions),
                 normal: initNormalAttribute(this.gl, this.programInfo, normals),
-                // uv: initTextureCoords(this.gl, this.programInfo, textureCoords),
+                uv: initTextureCoords(this.gl, this.programInfo, textureCoords),
                 // bitangents: initBitangentBuffer(this.gl, this.programInfo, bitangents)
             },
             indicies: indices ? initIndexBuffer(this.gl, indices) : null,
