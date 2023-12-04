@@ -223,7 +223,6 @@ function drawScene(gl, deltaTime, state) {
             >= vec3.distance(state.camera.position, vec3.fromValues(bCentroidFour[0], bCentroidFour[1], bCentroidFour[2])) ? -1 : 1;
     });
 
-    console.log(sorted.length);
     // iterate over each object and render them
     sorted.map((object) => {
         gl.useProgram(object.programInfo.program);
