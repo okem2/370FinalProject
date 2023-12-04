@@ -473,15 +473,27 @@ class Game {
     }
 
     removeDeadEnemies() {
-        let arrayLength = state.objects.length;
-        for (let i = 0; i < arrayLength; i++) {
+        let objectsLength = state.objects.length;
+        let collidableLength = this.collidableObjects.length;
+        for (let i = 0; i < objectsLength; i++) {
             if (state.objects[i].name === "dead") {
+                delete state.objects[i];
                 //Remove the dead enemy from the objects list and reset i
                 state.objects.splice(i, 1);
                 i = 0;
-                arrayLength -= 1;
+                objectsLength -= 1;
             }
         }
+        for (let j = 0; j < collidableLength; j++) {
+            if (this.collidableObjects[j].name === "dead") {
+                delete this.collidableObjects[j];
+                //Remove the dead enemy from the objects list and reset i
+                this.collidableObjects.splice(j, 1);
+                j = 0;
+                collidableLength -= 1;
+            }
+        }
+
     }
 
     // Runs once every frame non stop after the scene loads
@@ -536,7 +548,6 @@ class Game {
         this.checkCollision(this.character);
 
         this.removeDeadEnemies();
-
         // example: Rotate all objects in the scene marked with a flag
         // this.state.objects.forEach((object) => {
         //     if (object.constantRotate) {
