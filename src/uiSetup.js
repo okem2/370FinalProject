@@ -7,12 +7,15 @@ function shaderValuesErrorCheck(programInfo) {
         }
     });
     //do uniform check
+    // no normal matrix yet
+    /*
     Object.keys(programInfo.uniformLocations).map((attrib) => {
         if (!programInfo.uniformLocations[attrib]) {
             missing.push(attrib);
         }
     });
 
+    */
     if (missing.length > 0) {
         printError('Shader Location Error', 'One or more of the uniform and attribute variables in the shaders could not be located or is not being used : ' + missing);
     }

@@ -13,7 +13,7 @@ function getObject(state, name) {
 
 async function spawnObject(object, state) {
     if (object.type === "mesh") {
-        console.log("Spawning new mesh");
+        //console.log("Spawning new mesh");
         return await addMesh(object);
     } else if (object.type === "cube") {
         return await addCube(object, state);
