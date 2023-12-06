@@ -306,6 +306,7 @@ function drawScene(gl, deltaTime, state) {
     let sorted = state.objects.sort((a, b) => {
 
         // keep plane in back at all times!
+        // comparing with a string is inefficient, int would be better
         if (a.type == "plane") {
             return -1;
         }

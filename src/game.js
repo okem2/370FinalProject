@@ -144,10 +144,6 @@ class Game {
             let vertex = vec3.fromValues(vertices[i], vertices[i + 1], vertices[i + 2]);
             let transformedVertex = vec3.create();
 
-            
-
-            
-
             vec3.transformMat4(transformedVertex, vertex, object.model.modelMatrix);
             // idk why but these guys' transformations are multiplying together. EVerything else works well.
             if (!(object.isWall)) {
@@ -165,10 +161,6 @@ class Game {
                 
                 vec3.transformMat4(transformedVertex, transformedVertex, modelMatrix);
             }
-            
-            //vec3.transformMat4(transformedVertex, transformedVertex, object.model.modelMatrix);
-
-
             
             vec3.min(min, min, transformedVertex);
             vec3.max(max, max, transformedVertex);
@@ -427,9 +419,6 @@ class Game {
             // For example, updating something on the screen in real-time
         });
 
-        
-        //this.customMethod(); // calling our custom method! (we could put spawning logic, collision logic etc in there ;) ) 
-
     }
 
     // this is where we process input. We keep track of keys, etc. I have added some skeletons for
@@ -485,7 +474,7 @@ class Game {
         } else if (!mousedown.left && !mousedown.middle) {
             gamevars.attacking = false;
         }
-            
+
     }
 
     // skeleton for attack. We will use mousePos later to detect the player eye angle.
