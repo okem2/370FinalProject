@@ -9,7 +9,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 3,
-          "alpha": 1
+          "alpha": 1.0
         },
         "type": "mesh",
         "position": [ 0, 1, 0 ],
@@ -28,7 +28,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 3,
-          "alpha": 1
+          "alpha": 1.0
         },
         "type": "mesh",
         "position": [ 2, 1, 2 ],
@@ -47,7 +47,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 3,
-          "alpha": 1
+          "alpha": 1.0
         },
         "type": "cube",
         "position": [ 0, 0, 7.5 ],
@@ -66,7 +66,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 3,
-          "alpha": 1
+          "alpha": 1.0
         },
         "type": "cube",
         "position": [ 0, 0, -7.5 ],
@@ -85,7 +85,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 3,
-          "alpha": 1
+          "alpha": 1.0
         },
         "type": "cube",
         "position": [ 24.75, 0, 0 ],
@@ -104,7 +104,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 3,
-          "alpha": 1
+          "alpha": 1.0
         },
         "type": "cube",
         "position": [ -24.75, 0, 0 ],
@@ -123,7 +123,7 @@
           "specular": [ 0.5, 0.5, 0.5 ],
           "n": 10.000002,
           "shaderType": 1,
-          "alpha": "1.0"
+          "alpha": 1.0
         },
         "type": "plane",
         "position": [ 0, -0.5, 0 ],
@@ -140,7 +140,7 @@
       {
         "name": "pointLight1",
         "colour": [ 1, 1, 1 ],
-        "position": [ 0, 5, 0 ],
+        "position": [ 0, 10, 0 ],
         "strength": 2,
         "quadratic": 0.035,
         "linear": 0.09,

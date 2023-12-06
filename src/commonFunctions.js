@@ -388,7 +388,9 @@ function hexToRGB(hex) {
 
 function parseSceneFile(file, state) {
     return new Promise((resolve, reject) => {
-        state.lights = [];
+        //state.lights = [];
+        // state.lights did nothing
+        state.pointLights = [];
         state.loadObjects = [];
         state.objects = [];
 
