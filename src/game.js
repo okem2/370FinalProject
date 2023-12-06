@@ -12,10 +12,13 @@ class Game {
         this.projectiles = [];
         this.collidableObjects = [];
         this.enemyList = [];
-        this.elapsedTime = 0.0;
-        this.totalTime = 0.0;
-        
+        this.elapsedTimeSinceSpawn = 0.0;
+        this.elapsedTimeSinceHealth = 0.0;
 
+        this.firstPerson = false;
+        this.cameraToggleDown = false;
+
+        this.totalTime = 0.0;
 
         // keystates is for all keyboard input
         this.keyStates = {};
@@ -48,11 +51,6 @@ class Game {
             [Game.ColliderTypes.OBB | Game.ColliderTypes.OBB]: this.checkOBBCollision
         };
     }
-
-    // example - we can add our own custom method to our game and call it using 'this.customMethod()'
-    // customMethod() {
-    //     console.log("Custom method!");
-    // }
 
     eyeTraceToShootPlane(desiredY, screenX, screenY) {
         // not my work, forget where I found it from, gotta find that stack
@@ -110,7 +108,7 @@ class Game {
             type: 1,
             radius: radius,
             onCollide: onCollide ? onCollide : (otherObject) => {
-                console.log(`Collided with ${otherObject.name}`);
+                //console.log(`Collided with ${otherObject.name}`);
             }
         };
         this.collidableObjects.push(object);
@@ -126,7 +124,7 @@ class Game {
             min: minmax.min,
             max: minmax.max,
             onCollide: onCollide ? onCollide : (otherObject) => {
-                console.log(`Collided with ${otherObject.name}`);
+                //console.log(`Collided with ${otherObject.name}`);
             }
         };
         this.collidableObjects.push(object);
@@ -146,28 +144,23 @@ class Game {
             let vertex = vec3.fromValues(vertices[i], vertices[i + 1], vertices[i + 2]);
             let transformedVertex = vec3.create();
 
-            
-
-            // wow there's a whole extra set of steps to add initial transformations, that really cost me
-            // a lot of extra time.
-            let modelMatrix = mat4.create();
-            let negCentroid = vec3.fromValues(0.0, 0.0, 0.0);
-            vec3.negate(negCentroid, object.centroid);
-            mat4.translate(modelMatrix, modelMatrix, object.model.position);
-            mat4.translate(modelMatrix, modelMatrix, object.centroid);
-            mat4.mul(modelMatrix, modelMatrix, object.model.rotation);
-            mat4.scale(modelMatrix, modelMatrix, object.model.scale);
-            mat4.translate(modelMatrix, modelMatrix, negCentroid);
-
             vec3.transformMat4(transformedVertex, vertex, object.model.modelMatrix);
             // idk why but these guys' transformations are multiplying together. EVerything else works well.
             if (!(object.isWall)) {
+
+                // wow there's a whole extra set of steps to add initial transformations, that really cost me
+                // a lot of extra time.
+                let modelMatrix = mat4.create();
+                let negCentroid = vec3.fromValues(0.0, 0.0, 0.0);
+                vec3.negate(negCentroid, object.centroid);
+                mat4.translate(modelMatrix, modelMatrix, object.model.position);
+                mat4.translate(modelMatrix, modelMatrix, object.centroid);
+                mat4.mul(modelMatrix, modelMatrix, object.model.rotation);
+                mat4.scale(modelMatrix, modelMatrix, object.model.scale);
+                mat4.translate(modelMatrix, modelMatrix, negCentroid);
+                
                 vec3.transformMat4(transformedVertex, transformedVertex, modelMatrix);
             }
-            
-            //vec3.transformMat4(transformedVertex, transformedVertex, object.model.modelMatrix);
-
-
             
             vec3.min(min, min, transformedVertex);
             vec3.max(max, max, transformedVertex);
@@ -305,11 +298,23 @@ class Game {
         // Create variables for our objects and create colliders for them. Collisions do work, see the console log for detection
         // of collisions between the player and all 4 walls.
         this.character = getObject(this.state, "playerModel");
-        this.createSphereCollider(this.character, this.getSphereRadiusFromAABB(this.getOBBsMinMax(this.character)));
+        this.characterConstructor = state.loadObjects.find(obj => obj.name === "playerModel");
+
+        this.defaultPlayerColorAmbient = this.characterConstructor.material.ambient;
+        this.defaultPlayerColorDiffuse = this.characterConstructor.material.diffuse;
+        this.character.hp = 100.0;
+        this.createSphereCollider(this.character, this.getSphereRadiusFromAABB(this.getOBBsMinMax(this.character)), 
+
+        (object) => {
+            if (object.healthPack) {
+                object.onCollide(this.character);
+                //console.log(`Collected a healthpack! ${this.character.hp}`);
+            }
+            
+        });
         this.character.collider.radius = 0.5 * this.character.collider.radius;
 
         this.surface = getObject(this.state, "surfacePlane");
-
 
         this.gamevars.minmax = this.getOBBsMinMax(this.surface);
 
@@ -340,6 +345,7 @@ class Game {
         //this.gamevars.enemyDefaultRadius = this.getSphereRadiusFromAABB(this.getOBBsMinMax(this.enemyObject))
 
         // immediately remove enemy object so we can use the constructor instead later.
+        // this is dumb lol
         this.enemyObject = getObject(this.state, "enemyModel");
         this.gamevars.enemyDefaultRadius = this.getSphereRadiusFromAABB(this.getOBBsMinMax(this.enemyObject))
 
@@ -351,6 +357,7 @@ class Game {
 
         // reassign enemy object to the constructor
         this.enemyObject = state.loadObjects.find(obj => obj.name === "enemyModel");
+        this.lightConstructor = state.pointLights.find(obj => obj.name === "pointLight1");
 
         // create references for our vars. One thing to note is that I can change
         // their contents because I'm not referencing a primitve. If this.keystates was an
@@ -377,10 +384,10 @@ class Game {
             if (e.button === 0) {
                 mouse.left = true;
                 // Handle left click press
-                console.log("left click pressed");
+                //console.log("left click pressed");
             } else if (e.button === 2) {
                 mouse.right = true;
-                console.log("right click pressed");
+                //console.log("right click pressed");
                 // Handle right click press
             } else if (e.button === 1) {
                 mouse.middle = true;
@@ -412,9 +419,6 @@ class Game {
             // For example, updating something on the screen in real-time
         });
 
-        
-        //this.customMethod(); // calling our custom method! (we could put spawning logic, collision logic etc in there ;) ) 
-
     }
 
     // this is where we process input. We keep track of keys, etc. I have added some skeletons for
@@ -433,8 +437,22 @@ class Game {
         let mousePos = this.mousePosition;
         let gamevars = this.gamevars;
         let attacking = gamevars.attacking;
-
+        let firstperson = this.firstperson;
+        let cameraToggleDown = this.cameraToggleDown;
+        
+        // toggle camera
+        if (!cameraToggleDown) {
+            if (keys["c"] || keys["C"]) {
+                this.cameraToggleDown = true;
+                this.firstperson = !firstperson
+                //console.log(this.firstperson);
+            }
+        } else if (!keys["c"] && !keys["C"]) {
+            this.cameraToggleDown = false;
+        }
+        
         for (const key in keys) {
+
             if (keys[key]) {
                 this.moveCharacter(key);
             }
@@ -456,7 +474,7 @@ class Game {
         } else if (!mousedown.left && !mousedown.middle) {
             gamevars.attacking = false;
         }
-            
+
     }
 
     // skeleton for attack. We will use mousePos later to detect the player eye angle.
@@ -478,18 +496,17 @@ class Game {
         switch (mouseKey) {
             case 1:
                 
-                
-                console.log("mouse1 down");
+                //console.log("mouse1 down");
                 this.spawnProjectile(eyepos, direction, 0.07)
                 break;
             case 2:
-                console.log("mouse2 down");
+                //console.log("mouse2 down");
                 // shoot a laser??
                 
                 break;
             
             case 3:
-                console.log("mouse3 down");
+                //console.log("mouse3 down");
                 break;
             // Add other cases as needed
         }
@@ -533,9 +550,17 @@ class Game {
     //console.log(radius);
     pos[0] = Math.max(minx + radius*2, Math.min(pos[0], maxx - radius*2)); // Limit x
     pos[2] = Math.max(minz + radius, Math.min(pos[2], maxz - radius)); // Limit z
-
-    state.camera.position[0] = pos[0]
-
+    
+    // simple camera change
+    if (!this.firstperson) {
+        state.camera.position[0] = pos[0];
+        state.camera.position = [pos[0], 7.0, -6.0];
+        state.camera.front[1] = -2;
+    } else {
+        let newpos1 = pos[1] + 1;
+        state.camera.front[1] = -1;
+        state.camera.position = [pos[0], newpos1, pos[2]];
+    }
     // Update character position
     this.character.model.position = pos;
     }
@@ -564,7 +589,8 @@ class Game {
             tempObject.collidable = true;
             tempObject.onCollide = (object) => {
 
-                if (object.name === "playerModel") {
+                // phase through players and healthpacks
+                if ((object.name === "playerModel") || (object.healthPack)) {
                     return;
                 }
 
@@ -590,7 +616,7 @@ class Game {
                     object.hp -= 100;
                 }
 
-                console.log(`I collided with ${object.name}!`);
+                //console.log(`I collided with ${object.name}!`);
             };
 
             this.createSphereCollider(tempObject, this.getSphereRadiusFromAABB(minmax),tempObject.onCollide);
@@ -598,9 +624,10 @@ class Game {
         });
     }
     
-    moveProjectiles() {
+    moveProjectiles(deltaTime) {
         this.projectiles.forEach((object) => {
             object.translate(object.velocity);
+            object.rotate('y', deltaTime * 5*Math.random());
             this.checkCollision(object);
         });
     }
@@ -641,7 +668,7 @@ class Game {
                     state.objects.splice(arrayIndex, 1); // 2nd parameter means remove one item only
                 }
 
-                console.log(`Enemy collided with ${object.name}!`);
+                //console.log(`Enemy collided with ${object.name}!`);
             };
 
             this.createSphereCollider(tempObject, this.gamevars.enemyDefaultRadius,tempObject.onCollide);
@@ -650,19 +677,10 @@ class Game {
     }
 
     spawnEnemyaroundCircle() {
-        //let randomOffset = randomVec3(-3, -1);
-            //console.log(Math.random(-1, 1));
-            //randomOffset = vec2.fromValues(randomOffset[0] * (-1 + Math.round(Math.random()) * 2), randomOffset[2] * (-1 + Math.round(Math.random()) * 2));
-            let random1 = -3.14 + Math.random() * 6.28
-            let random2 = -3.14 + Math.random() * 6.28
-            
-            let object = this.character;
-            let eyepos = vec3.create();
-            vec3.transformMat4(eyepos, object.centroid, object.model.modelMatrix);
 
-            this.spawnEnemy(vec3.add(vec3.create(), this.character.model.position, vec3.fromValues(15*Math.cos(random1), 1, 7*Math.sin(random1))));
+        let random1 = -3.14 + Math.random() * 6.28
+        this.spawnEnemy(vec3.add(vec3.create(), this.character.model.position, vec3.fromValues(15*Math.cos(random1), 0.5, 7*Math.sin(random1))));
 
-            this.elapsedTime = 0.0;
     }
 
     //Move all enemies towards the player
@@ -690,32 +708,186 @@ class Game {
         }
     }
 
+    // spawn light around health
+    spawnLight(offset) {
+        let light = {...this.lightConstructor}
+
+        light.position = offset;
+        light.name = `Health Pack Light${this.elapsedTime}`;
+        light.colour = [ 0.2, 1.0, 0.2 ];
+        light.position = offset;
+        light.strength = 0.1;
+        
+        state.pointLights.push(light);
+        state.numLights = state.pointLights.length;
+        //console.log(state.pointLights);
+
+        light.remove = async () => {
+            //console.log(state.pointLights);
+
+            let array = state.pointLights;
+            let arrayIndex = array.indexOf(light);
+            if (arrayIndex > -1) { // only splice array when item is found
+                await state.pointLights.splice(arrayIndex, 1); // 2nd parameter means remove one item only
+            };
+        };
+
+        return light;
+    }
+    
+    spawnHealthonPlane() {
+
+            let minmax = this.gamevars.minmax;
+            //console.log(minmax);
+            let minx = minmax.min[0];
+            let maxx = minmax.max[0];
+    
+            let minz = minmax.min[2];
+            let maxz = minmax.max[2];
+            
+            let random1 = minx + Math.random() * (maxx - minx);
+            let random2 = minz + Math.random() * (maxz - minz);
+
+            this.spawnHealth([random1, 1.1, random2]);
+
+    }
+
+    spawnHealth(offset) {
+        let tempObject = spawnObject(this.enemyObject
+            , this.state).then(tempObject => {
+
+            tempObject.model.position = offset;
+            tempObject.model.scale = [0.25, 0.3, 0.25];
+
+            tempObject.material.ambient = [0.2, 0.8, 0.2];
+            tempObject.material.diffuse = [0.2, 0.8, 0.2];
+            tempObject.material.alpha = 0.1;
+
+
+            tempObject.healthPack = true;
+            tempObject.collidable = true;
+            tempObject.light = this.spawnLight(offset);
+            tempObject.name = "Health Pack"
+
+            tempObject.onCollide = (object) => {
+                if (object.name === "playerModel") {
+                    if (object.hp !== undefined) {
+                        object.hp += 20;
+                    }
+                } else if (!(Object.keys(object).length === 0)) {
+                    return;
+                }
+
+                //console.log(tempObject);
+                if (tempObject.light) {
+                    //console.log(tempObject.light);
+                    tempObject.light.remove();
+                }
+
+                let collArray = this.collidableObjects;
+                let collIndex = collArray.indexOf(tempObject);
+                if (collIndex > -1) { // only splice array when item is found
+                    collArray.splice(collIndex, 1); // 2nd parameter means remove one item only
+                }
+                
+                let spawnedObjects = this.spawnedObjects;
+                let enemyIndex = spawnedObjects.indexOf(tempObject);
+                if (enemyIndex > -1) { // only splice array when item is found
+                    spawnedObjects.splice(enemyIndex, 1); // 2nd parameter means remove one item only
+                }
+
+                let array = state.objects;
+                let arrayIndex = array.indexOf(tempObject);
+                if (arrayIndex > -1) { // only splice array when item is found
+                    state.objects.splice(arrayIndex, 1); // 2nd parameter means remove one item only
+                }
+
+                //console.log(`Enemy collided with ${object.name}!`);
+            };
+
+            this.createSphereCollider(tempObject, this.gamevars.enemyDefaultRadius,tempObject.onCollide);
+            this.spawnedObjects.push(tempObject); // add to spawned objects list
+        });
+    }
+
     // https://www.desmos.com/calculator/fslhmsn3jn
     // starts at 2 and goes down to one every 1/10 after an hour.
-    calculateInterval(totalTime) {
+    calculateSpawnInterval(totalTime) {
         return 3600 / (10 * (totalTime + 180));
+    }
+
+    interpolate(a, b, t) {
+        return a + t * (b - a)
+    }
+
+    playerColorFromHealth() {
+
+        // Red color for low health
+        let LowHealth = [1.0, 0.0, 0.0]; // Red
+
+        // Character's current health (normalized between 0 and 1)
+        let ambientDefault = this.defaultPlayerColorAmbient;
+        let diffuseDefault = this.defaultPlayerColorDiffuse;
+        let hpNormalized = this.character.hp / 100;
+
+        // Interpolate ambient and diffuse colors based on health
+        this.character.material.ambient = [
+            this.interpolate(LowHealth[0], ambientDefault[0], hpNormalized),
+            this.interpolate(LowHealth[1], ambientDefault[1], hpNormalized),
+            this.interpolate(LowHealth[2], ambientDefault[2], hpNormalized),
+        ];
+        
+        this.character.material.diffuse = [
+            this.interpolate(LowHealth[0], diffuseDefault[0], hpNormalized),
+            this.interpolate(LowHealth[1], diffuseDefault[1], hpNormalized),
+            this.interpolate(LowHealth[2], diffuseDefault[2], hpNormalized),
+        ];
+    }
+
+    spawnLogic(currentSpawnInterval, elapsedTimeSinceSpawn, elapsedTimeSinceHealth, deltaTime) {
+
+        if (elapsedTimeSinceSpawn >= currentSpawnInterval) {
+
+            this.spawnEnemyaroundCircle()
+            this.elapsedTimeSinceSpawn = 0.0;
+
+        } else if (elapsedTimeSinceHealth >= 5.0) {
+
+            this.spawnedObjects.forEach((object) => {
+                if (object.healthPack === true) {
+                    object.rotate('y', deltaTime * 0.5);
+                }
+            });
+
+            if (this.spawnedObjects.length <= 4) {
+                // spawn health pack.
+                this.spawnHealthonPlane()
+            }
+
+            this.elapsedTimeSinceHealth = 0.0;
+
+        }
     }
 
     // Runs once every frame non stop after the scene loads
     onUpdate(deltaTime) {
         // TODO - Here we can add game logic, like moving game objects, detecting collisions, you name it. Examples of functions can be found in sceneFunctions
         //Update the total time in the game and the elapsed time between spawns
-        this.elapsedTime = this.elapsedTime + deltaTime;
+        this.elapsedTimeSinceSpawn = this.elapsedTimeSinceSpawn + deltaTime;
+        this.elapsedTimeSinceHealth = this.elapsedTimeSinceHealth + deltaTime;
         this.totalTime = this.totalTime + deltaTime;
 
-        const currentInterval = this.calculateInterval(this.totalTime);
+        const currentSpawnInterval = this.calculateSpawnInterval(this.totalTime);
 
-        if (this.elapsedTime >= currentInterval) {
+        this.spawnLogic(currentSpawnInterval, this.elapsedTimeSinceSpawn, this.elapsedTimeSinceHealth, deltaTime);
+        
 
-            this.spawnEnemyaroundCircle()
-
-        }
-
+        this.playerColorFromHealth()
         // process our input. We'll have to keep in mind that we won't process input if the character is dead.
         this.processInput()
 
         // example: Rotate a single object we defined in our start method
-        this.moveProjectiles();
+        this.moveProjectiles(deltaTime);
         this.removeDeadEnemies();
         this.moveEnemies();
 

@@ -33,17 +33,6 @@ class Plane extends RenderObject {
         };
     }
 
-    // Overload scale so we only scale in x and z axis
-    scale(scaleVec) {
-        let xVal = this.model.scale[0];
-        let zVal = this.model.scale[2];
-
-        xVal *= scaleVec[0];
-        zVal *= scaleVec[2];
-
-        this.model.scale = vec3.fromValues(xVal, 1, zVal);
-    }
-
     setup() {
         this.centroid = calculateCentroid(this.model.vertices);
         this.lightingShader();

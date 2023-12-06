@@ -77,7 +77,7 @@ async function main() {
 
             oUV = aUV;
             oFragPosition = (uModelMatrix * vec4(aPosition, 1.0)).xyz;
-            oNormal = normalize((uModelMatrix * vec4(aNormal, 1.0)).xyz);
+            oNormal = normalize((normalMatrix * vec4(aNormal, 0.0)).xyz);
 
             oCameraPosition = uCameraPosition;
         }
@@ -137,9 +137,17 @@ async function main() {
         out vec4 fragColor;
 
         vec3 calculateColour(PointLight light, vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ambientVal, vec3 diffuseVal, vec3 specularVal, float nVal, float alphaValue, int samplerExists, vec3 textureColor) {
-		
-            // do all normal blinn phong calculations
             
+            vec3 empty = vec3(0.0,0.0,0.0);
+            float dist = length(light.position - fragPosition);
+
+            float interpFactor = max(1.0 - dist/(light.strength*30.0), 0.0);
+
+            // save some resources and stop while you don't need to light anything.
+            if (!(interpFactor > 0.0)) {
+                return empty;
+            }
+
             vec3 lightDir = normalize(light.position - fragPosition);
             vec3 halfwayDir = normalize(lightDir + viewDir);
 
@@ -151,18 +159,21 @@ async function main() {
             float spec = pow(max(dot(halfwayDir, normal), 0.0), nVal);
             vec3 specular = spec * specularVal * light.colour;
 
-            float dist = length(light.position - fragPosition);
             float attenuation = light.strength / (1.0 + light.linear * dist + light.quadratic * (dist*dist));
 
             diffuse *= attenuation;
             specular *= attenuation;
 
-            
+            vec3 totalCol = empty;
             if (samplerExists == 1) {
-                return (mix(textureColor, ambient + diffuse, 0.6) + specular);
-            }
+                totalCol = (mix(textureColor, ambient + diffuse, 0.6) + specular);
+            } else totalCol = (ambient + diffuse + specular);
 
-            return (ambient + diffuse + specular);
+            // make it so lights don't go forever
+            return mix(empty, totalCol, interpFactor);
+
+            return totalCol;
+            
         }
 
 
@@ -184,7 +195,7 @@ async function main() {
                 totalLighting += calculateColour(pointLights[i], normal, oFragPosition, viewDir, ambientVal, diffuseVal, specularVal, nVal, alphaValue, samplerExists, textureColor);
             }
             
-            fragColor = vec4(totalLighting, 1.0);
+            fragColor = vec4(totalLighting, alphaValue);
 
         }
         `;
@@ -208,6 +219,7 @@ async function main() {
     };
 
     state.numLights = state.pointLights.length;
+    //console.log(state.numLights);
 
     const now = new Date();
     console.log(state.loadObjects.length);
@@ -286,24 +298,34 @@ function drawScene(gl, deltaTime, state) {
     gl.depthFunc(gl.LEQUAL); // Near things obscure far things
     gl.disable(gl.CULL_FACE); // Cull the backface of our objects to be more efficient
     gl.cullFace(gl.BACK);
-    // gl.frontFace(gl.CCW);
+    gl.frontFace(gl.CCW);
     gl.clearDepth(1.0); // Clear everything
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // sort objects by nearness to camera
     let sorted = state.objects.sort((a, b) => {
+
+        // keep plane in back at all times!
+        // comparing with a string is inefficient, int would be better
+        if (a.type == "plane") {
+            return -1;
+        }
+
+        if (b.type == "plane") {
+            return 1;
+        }
+
         let aCentroidFour = vec4.fromValues(a.centroid[0], a.centroid[1], a.centroid[2], 1.0);
         // fixed a bug
         vec4.transformMat4(aCentroidFour, aCentroidFour, a.model.modelMatrix);
 
         let bCentroidFour = vec4.fromValues(b.centroid[0], b.centroid[1], b.centroid[2], 1.0);
-        vec4.transformMat4(bCentroidFour, bCentroidFour, a.model.modelMatrix);
+        vec4.transformMat4(bCentroidFour, bCentroidFour, b.model.modelMatrix);
 
         return vec3.distance(state.camera.position, vec3.fromValues(aCentroidFour[0], aCentroidFour[1], aCentroidFour[2]))
             >= vec3.distance(state.camera.position, vec3.fromValues(bCentroidFour[0], bCentroidFour[1], bCentroidFour[2])) ? -1 : 1;
     });
 
-    //console.log(sorted.length);
     // iterate over each object and render them
     sorted.map((object) => {
         gl.useProgram(object.programInfo.program);
@@ -335,14 +357,6 @@ function drawScene(gl, deltaTime, state) {
 
             // Model Matrix ....
             let modelMatrix = mat4.create();
-            let negCentroid = vec3.fromValues(0.0, 0.0, 0.0);
-            vec3.negate(negCentroid, object.centroid);
-            mat4.translate(modelMatrix, modelMatrix, object.model.position);
-            mat4.translate(modelMatrix, modelMatrix, object.centroid);
-            mat4.mul(modelMatrix, modelMatrix, object.model.rotation);
-            mat4.scale(modelMatrix, modelMatrix, object.model.scale);
-            mat4.translate(modelMatrix, modelMatrix, negCentroid);
-
             if (object.parent) {
                 let parent = object.parent;
                 console.log("Parent: ", object.parent);
@@ -351,6 +365,18 @@ function drawScene(gl, deltaTime, state) {
                 }
             }
 
+            mat4.translate(modelMatrix, modelMatrix, object.model.position);
+
+            mat4.translate(modelMatrix, modelMatrix, object.centroid);
+
+            mat4.mul(modelMatrix, modelMatrix, object.model.rotation);
+
+            mat4.scale(modelMatrix, modelMatrix, object.model.scale);
+
+            let negCentroid = vec3.fromValues(0.0, 0.0, 0.0);
+            vec3.negate(negCentroid, object.centroid);
+            mat4.translate(modelMatrix, modelMatrix, negCentroid);
+            
             object.model.modelMatrix = modelMatrix;
             gl.uniformMatrix4fv(object.programInfo.uniformLocations.model, false, modelMatrix);
 
@@ -365,13 +391,9 @@ function drawScene(gl, deltaTime, state) {
             gl.uniform3fv(object.programInfo.uniformLocations.ambientVal, object.material.ambient);
             gl.uniform3fv(object.programInfo.uniformLocations.specularVal, object.material.specular);
             gl.uniform1f(object.programInfo.uniformLocations.nVal, object.material.n);
+            gl.uniform1f(object.programInfo.uniformLocations.alphaValue, object.material.alpha);
 
-            let mainLight = state.pointLights[0];
-
-            gl.uniform3fv(gl.getUniformLocation(object.programInfo.program, 'mainLight.position'), mainLight.position);
-            gl.uniform3fv(gl.getUniformLocation(object.programInfo.program, 'mainLight.colour'), mainLight.colour);
-            gl.uniform1f(gl.getUniformLocation(object.programInfo.program, 'mainLight.strength'), mainLight.strength);
-
+            state.numLights = state.pointLights.length;
             gl.uniform1i(gl.getUniformLocation(object.programInfo.program, 'numLights'), state.numLights);
             
             object.numLights = state.numLights;
@@ -417,6 +439,27 @@ function drawScene(gl, deltaTime, state) {
                     gl.activeTexture(gl.TEXTURE1);
                     state.samplerNormExists = 0;
                     gl.uniform1i(object.programInfo.uniformLocations.normalSamplerExists, state.samplerNormExists);
+                }
+
+                //console.log(object.material.alpha);
+                if (object.material.alpha < 1.0) {
+				
+                    // no z buffer, apply blending and blend function
+                    gl.enable(gl.BLEND);
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.depthMask(false);
+
+                } else {
+                    
+                    // enable z buffer
+                    gl.disable(gl.BLEND);
+                    // I guess we never disable the depth test?
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.depthMask(true);
+                    gl.depthFunc(gl.LEQUAL);
+                
                 }
 
                 // Draw the object
