@@ -53,18 +53,18 @@ class Game {
     }
 
     eyeTraceToShootPlane(desiredY, screenX, screenY) {
-        // not my work, forget where I found it from, gotta find that stack
-        // overflow thread to give credit because when I tried to inverse
-        // projectionmatrix I just kept getting NaN
+        // https://stackoverflow.com/questions/53467077/opengl-ray-tracing-using-inverse-transformations
+        // this was very helpful to bypass a more complex transformation chain. This is a much easier way to do it.
+        // It just calculates two points using the inverse view proj matrix to basically simulate ray origin and scren pos.
         let proj = this.state.projectionMatrix;
         
         let viewMatrix = this.state.viewMatrix;
         let canvasX = this.state.canvas.width
         let canvasY = this.state.canvas.height
 
+        // convert to screen coordinates
         const x = ((2.0 * screenX) / canvasX) - 1.0;
         const y = 1.0 - ((2.0 * screenY) / canvasY);
-
 
         let ray = vec4.fromValues(x, y, -1.0, 1.0);
         let ray2 = vec4.fromValues(x, y, 1.0, 1.0);
